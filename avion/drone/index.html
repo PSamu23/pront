@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DroneClean — Limpieza de Fachadas con Drones</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#00d4ff',
+            brandDark: '#0066cc',
+            bg: '#0a0f1e',
+            card: '#111827',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: #0a0f1e; color: #f1f5f9; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+    #drone-canvas { position: fixed; top: 0; right: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10; }
+    .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+    .glow { text-shadow: 0 0 30px rgba(0,212,255,0.6); }
+    .btn-primary { background: linear-gradient(135deg, #00d4ff, #0066cc); color: #fff; font-weight: 600; padding: 0.75rem 2rem; border-radius: 9999px; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: inline-block; text-decoration: none; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,212,255,0.4); }
+    .btn-outline { background: transparent; color: #00d4ff; font-weight: 600; padding: 0.75rem 2rem; border-radius: 9999px; border: 2px solid #00d4ff; cursor: pointer; transition: all 0.2s; display: inline-block; text-decoration: none; }
+    .btn-outline:hover { background: rgba(0,212,255,0.15); transform: translateY(-2px); }
+    .plan-card { background: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 1.25rem; padding: 2rem; transition: transform 0.25s, box-shadow 0.25s; }
+    .plan-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+    .plan-card.featured { border-color: #00d4ff; box-shadow: 0 0 30px rgba(0,212,255,0.2); }
+    .benefit-card { background: #111827; border: 1px solid rgba(255,255,255,0.07); border-radius: 1rem; padding: 1.75rem; transition: transform 0.25s, border-color 0.25s; }
+    .benefit-card:hover { transform: translateY(-4px); border-color: rgba(0,212,255,0.4); }
+    .faq-item { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s; }
+    .faq-answer.open { max-height: 400px; }
+    .nav-scrolled { background: rgba(10,15,30,0.92) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; }
+    .stat-num { font-size: 2.5rem; font-weight: 700; color: #00d4ff; line-height: 1; }
+    video { object-fit: cover; }
+    @media (max-width: 768px) {
+      .stat-num { font-size: 1.75rem; }
+      .about-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }
+      .section-pad { padding: 4rem 1.25rem !important; }
+      .section-pad-alt { padding: 4rem 1.25rem !important; }
+      .hero-badge { font-size: 0.75rem !important; padding: 0.35rem 0.9rem !important; }
+      .plans-grid { grid-template-columns: 1fr !important; }
+      .benefits-grid { grid-template-columns: 1fr !important; }
+      #drone-canvas { opacity: 0.75; }
+    }
+    @media (max-width: 480px) {
+      .stat-num { font-size: 1.5rem; }
+      .section-pad, .section-pad-alt { padding: 3rem 1rem !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Canvas dron 3D -->
+<canvas id="drone-canvas"></canvas>
+
+<!-- ══════════════ NAVBAR ══════════════ -->
+<nav id="navbar" style="position:fixed;top:0;left:0;right:0;z-index:50;background:transparent;transition:background 0.3s,backdrop-filter 0.3s;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;">
+  <a href="#" style="font-size:1.4rem;font-weight:700;color:#fff;text-decoration:none;letter-spacing:-0.5px;">
+    Drone<span style="color:#00d4ff;">Clean</span>
+  </a>
+  <div id="nav-links" style="display:flex;gap:2rem;align-items:center;">
+    <a href="#nosotros" style="color:#cbd5e1;text-decoration:none;font-weight:500;font-size:0.95rem;transition:color 0.2s;" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='#cbd5e1'">Nosotros</a>
+    <a href="#servicios" style="color:#cbd5e1;text-decoration:none;font-weight:500;font-size:0.95rem;transition:color 0.2s;" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='#cbd5e1'">Servicios</a>
+    <a href="#beneficios" style="color:#cbd5e1;text-decoration:none;font-weight:500;font-size:0.95rem;transition:color 0.2s;" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='#cbd5e1'">Beneficios</a>
+    <a href="#faq" style="color:#cbd5e1;text-decoration:none;font-weight:500;font-size:0.95rem;transition:color 0.2s;" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='#cbd5e1'">FAQ</a>
+    <a href="#servicios" class="btn-primary" style="font-size:0.9rem;padding:0.6rem 1.4rem;">Solicitar Cotización</a>
+  </div>
+  <!-- hamburger mobile -->
+  <button id="menu-btn" style="display:none;background:none;border:none;cursor:pointer;color:#fff;" onclick="toggleMenu()">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+</nav>
+<div id="mobile-menu" style="display:none;position:fixed;top:70px;left:0;right:0;z-index:49;background:rgba(10,15,30,0.97);padding:1.5rem;flex-direction:column;gap:1.25rem;border-bottom:1px solid rgba(255,255,255,0.08);">
+  <a href="#nosotros" style="color:#cbd5e1;text-decoration:none;font-weight:500;" onclick="closeMobileMenu()">Nosotros</a>
+  <a href="#servicios" style="color:#cbd5e1;text-decoration:none;font-weight:500;" onclick="closeMobileMenu()">Servicios</a>
+  <a href="#beneficios" style="color:#cbd5e1;text-decoration:none;font-weight:500;" onclick="closeMobileMenu()">Beneficios</a>
+  <a href="#faq" style="color:#cbd5e1;text-decoration:none;font-weight:500;" onclick="closeMobileMenu()">FAQ</a>
+  <a href="#servicios" class="btn-primary" style="text-align:center;" onclick="closeMobileMenu()">Solicitar Cotización</a>
+</div>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section id="hero" style="position:relative;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+  <video id="hero-video" autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
+    <!-- OPCIÓN 1: pon tu video descargado en la misma carpeta y renómbralo video.mp4 -->
+    <source src="video.mp4" type="video/mp4" />
+    <!-- OPCIÓN 2: fallbacks online (requieren conexión a internet) -->
+    <source src="https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-city-at-dusk-41641-large.mp4" type="video/mp4" />
+    <source src="https://assets.mixkit.co/videos/preview/mixkit-flying-above-a-city-at-night-41479-large.mp4" type="video/mp4" />
+    <source src="https://assets.mixkit.co/videos/preview/mixkit-aerial-shot-of-city-traffic-at-night-11-large.mp4" type="video/mp4" />
+  </video>
+  <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(10,15,30,0.55) 0%, rgba(10,15,30,0.75) 60%, rgba(10,15,30,1) 100%);z-index:1;"></div>
+  <div style="position:relative;z-index:2;text-align:center;max-width:850px;padding:0 1.5rem;">
+    <div class="hero-badge" style="display:inline-block;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.4);border-radius:9999px;padding:0.4rem 1.2rem;font-size:0.85rem;color:#00d4ff;font-weight:600;margin-bottom:1.5rem;letter-spacing:0.05em;">
+      TECNOLOGÍA AEROESPACIAL APLICADA
+    </div>
+    <h1 id="hero-title" style="font-size:clamp(2.4rem,6vw,4.5rem);font-weight:700;line-height:1.1;margin:0 0 1.25rem;color:#fff;" class="glow">
+      El futuro de la<br><span style="color:#00d4ff;">limpieza de fachadas</span>
+    </h1>
+    <p id="hero-sub" style="font-size:clamp(1rem,2vw,1.2rem);color:#94a3b8;max-width:600px;margin:0 auto 2.5rem;line-height:1.7;">
+      Drones industriales de última generación para edificios, torres y estructuras de cualquier altura. Seguro, eficiente y sin andamios.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="#servicios" class="btn-primary">Ver Planes</a>
+      <a href="#nosotros" class="btn-outline">Contáctanos</a>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);z-index:2;animation:bounce 2s infinite;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+</section>
+<style>@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}</style>
+
+<!-- ══════════════ NOSOTROS ══════════════ -->
+<section id="nosotros" class="section-pad" style="padding:6rem 2rem;max-width:1200px;margin:0 auto;">
+  <div class="about-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;">
+    <div>
+      <div style="color:#00d4ff;font-weight:600;font-size:0.85rem;letter-spacing:0.1em;margin-bottom:1rem;">NUESTRA HISTORIA</div>
+      <h2 style="font-size:clamp(1.8rem,3vw,2.8rem);font-weight:700;margin:0 0 1.5rem;line-height:1.2;">Pioneros en limpieza<br><span style="color:#00d4ff;">aérea industrial</span></h2>
+      <p style="color:#94a3b8;line-height:1.8;margin-bottom:1.25rem;font-size:1rem;">
+        En DroneClean llevamos más de 6 años revolucionando la industria del mantenimiento de edificios. Nacimos con una misión clara: eliminar el riesgo humano en trabajos en altura sin sacrificar calidad ni eficiencia.
+      </p>
+      <p style="color:#94a3b8;line-height:1.8;font-size:1rem;">
+        Nuestros drones industriales están equipados con sistemas de limpieza de alta presión, cámaras 4K para inspección y software de navegación autónoma certificado. Operamos en las principales ciudades de Latinoamérica con un equipo de ingenieros especializados.
+      </p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;" id="stats-grid"></div>
+  </div>
+</section>
+
+<!-- ══════════════ SERVICIOS / PLANES ══════════════ -->
+<section id="servicios" class="section-pad-alt" style="padding:6rem 2rem;background:rgba(255,255,255,0.015);">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:4rem;">
+      <div style="color:#00d4ff;font-weight:600;font-size:0.85rem;letter-spacing:0.1em;margin-bottom:1rem;">PLANES Y TARIFAS</div>
+      <h2 style="font-size:clamp(1.8rem,3vw,2.8rem);font-weight:700;margin:0;">Elige el plan <span style="color:#00d4ff;">ideal para tu edificio</span></h2>
+    </div>
+    <div id="plans-grid" class="plans-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem;align-items:start;"></div>
+  </div>
+</section>
+
+<!-- ══════════════ BENEFICIOS ══════════════ -->
+<section id="beneficios" class="section-pad" style="padding:6rem 2rem;">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:4rem;">
+      <div style="color:#00d4ff;font-weight:600;font-size:0.85rem;letter-spacing:0.1em;margin-bottom:1rem;">¿POR QUÉ ELEGIRNOS?</div>
+      <h2 style="font-size:clamp(1.8rem,3vw,2.8rem);font-weight:700;margin:0;">Las ventajas de la <span style="color:#00d4ff;">limpieza con drones</span></h2>
+    </div>
+    <div id="benefits-grid" class="benefits-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;"></div>
+  </div>
+</section>
+
+<!-- ══════════════ FAQ ══════════════ -->
+<section id="faq" class="section-pad-alt" style="padding:6rem 2rem;background:rgba(255,255,255,0.015);">
+  <div style="max-width:780px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:4rem;">
+      <div style="color:#00d4ff;font-weight:600;font-size:0.85rem;letter-spacing:0.1em;margin-bottom:1rem;">PREGUNTAS FRECUENTES</div>
+      <h2 style="font-size:clamp(1.8rem,3vw,2.8rem);font-weight:700;margin:0;">Resolvemos tus <span style="color:#00d4ff;">dudas</span></h2>
+    </div>
+    <div id="faq-list"></div>
+  </div>
+</section>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer style="padding:3rem 2rem;border-top:1px solid rgba(255,255,255,0.08);text-align:center;">
+  <div style="font-size:1.5rem;font-weight:700;margin-bottom:0.75rem;">Drone<span style="color:#00d4ff;">Clean</span></div>
+  <p style="color:#64748b;font-size:0.9rem;margin:0 0 0.5rem;">Elevando los estándares de la limpieza industrial</p>
+  <p style="color:#475569;font-size:0.82rem;margin:0;">© 2026 DroneClean. Todos los derechos reservados.</p>
+</footer>
+
+<!-- ══════════════ SCRIPTS ══════════════ -->
+<script src="data.js"></script>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+<script>
+// ──────────────────────────────────────
+// RENDER DATA
+// ──────────────────────────────────────
+(function() {
+  var D = window.DRONEDATA;
+
+  // Stats
+  var statsGrid = document.getElementById('stats-grid');
+  D.about.stats.forEach(function(s) {
+    var el = document.createElement('div');
+    el.className = 'glass';
+    el.style.cssText = 'border-radius:1rem;padding:1.75rem;text-align:center;';
+    el.innerHTML = '<div class="stat-num">' + s.value + '</div><div style="color:#94a3b8;font-size:0.9rem;margin-top:0.5rem;">' + s.label + '</div>';
+    statsGrid.appendChild(el);
+  });
+
+  // Plans
+  var plansGrid = document.getElementById('plans-grid');
+  D.plans.forEach(function(p) {
+    var el = document.createElement('div');
+    el.className = 'plan-card' + (p.highlight ? ' featured' : '');
+    var badge = p.highlight ? '<div style="background:#00d4ff;color:#0a0f1e;font-size:0.75rem;font-weight:700;padding:0.3rem 1rem;border-radius:9999px;display:inline-block;margin-bottom:1rem;letter-spacing:0.05em;">MÁS POPULAR</div>' : '<div style="height:2rem;"></div>';
+    var features = p.features.map(function(f) {
+      return '<li style="display:flex;gap:0.6rem;align-items:flex-start;margin-bottom:0.65rem;color:#94a3b8;font-size:0.9rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2.5" style="flex-shrink:0;margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>' + f + '</li>';
+    }).join('');
+    el.innerHTML = badge +
+      '<h3 style="font-size:1.3rem;font-weight:700;margin:0 0 0.4rem;">' + p.name + '</h3>' +
+      '<p style="color:#64748b;font-size:0.85rem;margin:0 0 1.25rem;">' + p.desc + '</p>' +
+      '<div style="margin-bottom:1.5rem;"><span style="font-size:2.5rem;font-weight:700;color:#00d4ff;">' + p.price + '</span><span style="color:#64748b;font-size:0.85rem;"> ' + p.period + '</span></div>' +
+      '<ul style="list-style:none;padding:0;margin:0 0 2rem;">' + features + '</ul>' +
+      '<button class="' + (p.highlight ? 'btn-primary' : 'btn-outline') + '" style="width:100%;text-align:center;">' + p.cta + '</button>';
+    plansGrid.appendChild(el);
+  });
+
+  // Benefits icons SVG map
+  var icons = {
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    target: '<svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+    leaf: '<svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><path d="M17 8C8 10 5.9 16.17 3.82 19.56A1 1 0 004.64 21 9.36 9.36 0 0010 19c5-3 7-7 7-7"/><path d="M17 8c0 0-1 5-8 9"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    badge: '<svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>'
+  };
+
+  var benefitsGrid = document.getElementById('benefits-grid');
+  D.benefits.forEach(function(b) {
+    var el = document.createElement('div');
+    el.className = 'benefit-card';
+    el.innerHTML =
+      '<div style="width:48px;height:48px;margin-bottom:1.25rem;">' + icons[b.icon] + '</div>' +
+      '<h3 style="font-size:1.05rem;font-weight:700;margin:0 0 0.65rem;">' + b.title + '</h3>' +
+      '<p style="color:#94a3b8;font-size:0.9rem;line-height:1.7;margin:0;">' + b.desc + '</p>';
+    benefitsGrid.appendChild(el);
+  });
+
+  // FAQ
+  var faqList = document.getElementById('faq-list');
+  D.faq.forEach(function(item, i) {
+    var el = document.createElement('div');
+    el.className = 'faq-item';
+    el.innerHTML =
+      '<button onclick="toggleFaq(' + i + ')" style="width:100%;background:none;border:none;cursor:pointer;padding:1.5rem 0;display:flex;justify-content:space-between;align-items:center;gap:1rem;text-align:left;">' +
+        '<span style="font-weight:600;color:#f1f5f9;font-size:1rem;">' + item.q + '</span>' +
+        '<svg id="faq-icon-' + i + '" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2" style="flex-shrink:0;transition:transform 0.3s;"><polyline points="6 9 12 15 18 9"/></svg>' +
+      '</button>' +
+      '<div id="faq-ans-' + i + '" class="faq-answer" style="padding:0 0 0;">' +
+        '<p style="color:#94a3b8;line-height:1.8;font-size:0.95rem;margin:0;padding-bottom:1.5rem;">' + item.a + '</p>' +
+      '</div>';
+    faqList.appendChild(el);
+  });
+
+})();
+
+var openFaq = null;
+function toggleFaq(i) {
+  var ans = document.getElementById('faq-ans-' + i);
+  var icon = document.getElementById('faq-icon-' + i);
+  if (openFaq !== null && openFaq !== i) {
+    document.getElementById('faq-ans-' + openFaq).classList.remove('open');
+    document.getElementById('faq-icon-' + openFaq).style.transform = '';
+  }
+  var isOpen = ans.classList.contains('open');
+  ans.classList.toggle('open');
+  icon.style.transform = isOpen ? '' : 'rotate(180deg)';
+  openFaq = isOpen ? null : i;
+}
+
+// ──────────────────────────────────────
+// NAVBAR SCROLL
+// ──────────────────────────────────────
+window.addEventListener('scroll', function() {
+  var nav = document.getElementById('navbar');
+  if (window.scrollY > 50) nav.classList.add('nav-scrolled');
+  else nav.classList.remove('nav-scrolled');
+});
+
+// Mobile menu
+function toggleMenu() {
+  var m = document.getElementById('mobile-menu');
+  m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').style.display = 'none';
+}
+
+// Responsive nav
+function checkNav() {
+  var links = document.getElementById('nav-links');
+  var btn = document.getElementById('menu-btn');
+  if (window.innerWidth < 768) {
+    links.style.display = 'none';
+    btn.style.display = 'block';
+  } else {
+    links.style.display = 'flex';
+    btn.style.display = 'none';
+    document.getElementById('mobile-menu').style.display = 'none';
+  }
+}
+window.addEventListener('resize', checkNav);
+checkNav();
+</script>
+
+<!-- ══════════════ THREE.JS DRON ══════════════ -->
+<script>
+(function() {
+  var canvas = document.getElementById('drone-canvas');
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = false;
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 5);
+
+  // Lights
+  var ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambientLight);
+  var dirLight = new THREE.DirectionalLight(0x00d4ff, 1.2);
+  dirLight.position.set(2, 4, 3);
+  scene.add(dirLight);
+  var dirLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+  dirLight2.position.set(-3, -2, 2);
+  scene.add(dirLight2);
+
+  // Materials
+  var bodyMat = new THREE.MeshPhongMaterial({ color: 0x1a1a2e, shininess: 80 });
+  var accentMat = new THREE.MeshPhongMaterial({ color: 0x00d4ff, shininess: 120 });
+  var darkMat = new THREE.MeshPhongMaterial({ color: 0x0d0d1a, shininess: 40 });
+  var ledRedMat = new THREE.MeshPhongMaterial({ color: 0xff2244, emissive: 0xff2244, emissiveIntensity: 1.5 });
+  var ledGreenMat = new THREE.MeshPhongMaterial({ color: 0x00ff88, emissive: 0x00ff88, emissiveIntensity: 1.5 });
+
+  // Dron group
+  var drone = new THREE.Group();
+  scene.add(drone);
+
+  // Body (torso achatado)
+  var body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.7), bodyMat);
+  drone.add(body);
+
+  // Battery / detail on top
+  var battery = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.25), darkMat);
+  battery.position.set(0, 0.16, 0);
+  drone.add(battery);
+
+  // Vent slots (small boxes)
+  for (var v = -1; v <= 1; v += 1) {
+    var vent = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.22), accentMat);
+    vent.position.set(v * 0.18, 0.12, 0);
+    drone.add(vent);
+  }
+
+  // Camera/sensor hanging below
+  var camMount = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.1, 12), darkMat);
+  camMount.position.set(0, -0.18, 0.1);
+  drone.add(camMount);
+  var camLens = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), accentMat);
+  camLens.position.set(0, -0.26, 0.1);
+  drone.add(camLens);
+
+  // 4 Arms + rotors
+  var armAngles = [Math.PI * 0.25, Math.PI * 0.75, -Math.PI * 0.75, -Math.PI * 0.25];
+  var armLen = 0.75;
+  var rotors = [];
+  var leds = [];
+
+  armAngles.forEach(function(angle, idx) {
+    var ax = Math.cos(angle) * armLen * 0.5;
+    var az = Math.sin(angle) * armLen * 0.5;
+
+    // Arm
+    var armGroup = new THREE.Group();
+    var arm = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.06, 0.1), bodyMat);
+    armGroup.add(arm);
+    armGroup.rotation.y = angle;
+    armGroup.position.set(0, 0.01, 0);
+    drone.add(armGroup);
+
+    // Rotor hub
+    var hubX = Math.cos(angle) * armLen * 0.5;
+    var hubZ = Math.sin(angle) * armLen * 0.5;
+    var hub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.06, 12), darkMat);
+    hub.position.set(hubX, 0.06, hubZ);
+    drone.add(hub);
+
+    // Rotor blade ring (torus)
+    var rotorGroup = new THREE.Group();
+    var rotor = new THREE.Mesh(
+      new THREE.TorusGeometry(0.22, 0.03, 8, 28),
+      accentMat
+    );
+    rotor.rotation.x = Math.PI / 2;
+    rotorGroup.add(rotor);
+
+    // Blade cross
+    var blade1 = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.02, 0.06), accentMat);
+    var blade2 = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.02, 0.06), accentMat);
+    blade2.rotation.y = Math.PI / 2;
+    rotorGroup.add(blade1);
+    rotorGroup.add(blade2);
+
+    rotorGroup.position.set(hubX, 0.1, hubZ);
+    drone.add(rotorGroup);
+    rotors.push(rotorGroup);
+
+    // LED
+    var ledMat = (idx % 2 === 0) ? ledRedMat : ledGreenMat;
+    var led = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), ledMat);
+    led.position.set(hubX, 0.14, hubZ);
+    drone.add(led);
+    leds.push(led);
+  });
+
+  var isMobile = window.innerWidth < 768;
+  drone.scale.set(isMobile ? 0.45 : 0.85, isMobile ? 0.45 : 0.85, isMobile ? 0.45 : 0.85);
+
+  // Calcula el espacio 3D visible según FOV y distancia de cámara
+  function getVisibleSize() {
+    var fovRad = (45 * Math.PI) / 180;
+    var halfH3D = Math.tan(fovRad / 2) * camera.position.z;
+    var halfW3D = halfH3D * (window.innerWidth / window.innerHeight);
+    return { w: halfW3D, h: halfH3D };
+  }
+
+  var vis = getVisibleSize();
+
+  // En móvil el dron flota fijo en esquina superior derecha
+  // En desktop sigue el cursor
+  var targetX = vis.w * 0.72;
+  var targetY = vis.h * 0.72;
+  var currentX = targetX;
+  var currentY = targetY;
+  var lastMouseX = window.innerWidth;
+  var bankAngle = 0;
+  var lerp = 0.07;
+  var floatTime = 0;
+
+  drone.position.set(currentX, currentY, 0);
+
+  function onMouseMove(e) {
+    if (window.innerWidth < 768) return; // en móvil no sigue el touch
+    var cx = e.clientX;
+    var cy = e.clientY;
+    vis = getVisibleSize();
+    targetX = ((cx / window.innerWidth) - 0.5) * 2 * vis.w;
+    targetY = -((cy / window.innerHeight) - 0.5) * 2 * vis.h + 0.7;
+    var dx = cx - lastMouseX;
+    bankAngle = Math.max(-0.3, Math.min(0.3, dx * 0.01));
+    lastMouseX = cx;
+  }
+
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('touchmove', function(e) {
+    // touch no mueve el dron para no interferir con scroll/clicks
+    if (false) onMouseMove(e);
+  }, { passive: true });
+
+  window.addEventListener('resize', function() {
+    isMobile = window.innerWidth < 768;
+    drone.scale.set(isMobile ? 0.45 : 0.85, isMobile ? 0.45 : 0.85, isMobile ? 0.45 : 0.85);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    vis = getVisibleSize();
+    if (isMobile) {
+      targetX = vis.w * 0.72;
+      targetY = vis.h * 0.72;
+    }
+  });
+
+  var clock = new THREE.Clock();
+  var rotorSpeed = 18;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    var delta = clock.getDelta();
+    floatTime += delta;
+
+    // Lerp suave hacia el cursor
+    currentX += (targetX - currentX) * lerp;
+    currentY += (targetY - currentY) * lerp;
+
+    // Flotación senoidal independiente
+    var floatY = Math.sin(floatTime * 1.1) * 0.15;
+
+    drone.position.x = currentX;
+    drone.position.y = currentY + floatY;
+
+    // Banking tilt al moverse horizontalmente
+    drone.rotation.z += (-bankAngle - drone.rotation.z) * 0.1;
+    drone.rotation.x += (currentY * -0.04 - drone.rotation.x) * 0.06;
+    bankAngle *= 0.9;
+
+    // Giro de rotores
+    rotors.forEach(function(r, i) {
+      r.rotation.y += rotorSpeed * delta * (i % 2 === 0 ? 1 : -1);
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+})();
+</script>
+
+</body>
+</html>

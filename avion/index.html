@@ -1,0 +1,771 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkyElite – Jets Privados Premium</title>
+
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Datos del sitio (debe cargarse antes que React) -->
+    <script src="data.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React + ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Babel (transpila JSX en el navegador) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Three.js -->
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+
+    <!-- GSAP + ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+      * { font-family: 'Inter', sans-serif; }
+      html { scroll-behavior: smooth; }
+      html, body, #root { height: 100%; margin: 0; padding: 0; }
+
+      .video-overlay {
+        background: linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.45) 0%,
+          rgba(255,255,255,0.25) 50%,
+          rgba(255,255,255,0.40) 100%
+        );
+      }
+
+      /* Espacio para que el scroll no quede tapado por la navbar fija */
+      section[id] { scroll-margin-top: 88px; }
+    </style>
+
+    <script>
+      tailwind.config = {
+        theme: { extend: { maxWidth: { '7xl': '80rem' } } }
+      };
+    </script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+      const D = window.SKYDATA;
+
+      /* ─────────────────────────── ICONOS ─────────────────────────── */
+
+      const MenuIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="4" y1="6" x2="20" y2="6" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="18" x2="20" y2="18" />
+        </svg>
+      );
+
+      const XIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      );
+
+      const ChevronIcon = ({ open }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', flexShrink: 0 }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      );
+
+      const CheckIcon = ({ light }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+          fill="none" stroke={light ? 'rgba(255,255,255,0.6)' : '#202A36'} strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '3px' }}>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      );
+
+      const ClockIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+          fill="none" stroke="#202A36" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+
+      const ShieldIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+          fill="none" stroke="#202A36" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+
+      const StarIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+          fill="none" stroke="#202A36" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      );
+
+      const GlobeIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+          fill="none" stroke="#202A36" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+      );
+
+      const UsersIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+          fill="none" stroke="#202A36" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      );
+
+      const ZapIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+          fill="none" stroke="#202A36" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+
+      const iconMap = {
+        clock: ClockIcon, shield: ShieldIcon, star: StarIcon,
+        globe: GlobeIcon, users: UsersIcon,  zap:  ZapIcon
+      };
+
+      /* ─────────────────────────── HELPERS ─────────────────────────── */
+
+      const Label = ({ text }) => (
+        <p className="text-sm font-semibold text-gray-500 tracking-widest uppercase mb-4">{text}</p>
+      );
+
+      const DarkButton = ({ href, children }) => (
+        <a
+          href={href}
+          className="inline-block px-6 py-3 rounded-full text-white font-medium text-sm transition-colors"
+          style={{ backgroundColor: '#202A36' }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a2229'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#202A36'}
+        >
+          {children}
+        </a>
+      );
+
+      /* ─────────────────────────── NAVBAR ─────────────────────────── */
+
+      function Navbar() {
+        const [mobileOpen, setMobileOpen] = useState(false);
+        const [scrolled,   setScrolled]   = useState(false);
+
+        useEffect(() => {
+          const onScroll = () => setScrolled(window.scrollY > 60);
+          window.addEventListener('scroll', onScroll);
+          return () => window.removeEventListener('scroll', onScroll);
+        }, []);
+
+        return (
+          <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+            style={scrolled ? { backgroundColor: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 1px 16px rgba(0,0,0,0.07)' } : {}}>
+
+            <div className="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
+
+              {/* Marca */}
+              <a href="#inicio" className="text-2xl font-semibold text-gray-900 tracking-tight select-none">
+                {D.brand}
+              </a>
+
+              {/* Menú desktop */}
+              <ul className="hidden md:flex items-center gap-8">
+                {D.nav.map(item => (
+                  <li key={item.label}>
+                    <a href={item.href}
+                      className="text-gray-900 hover:text-gray-600 transition-colors text-sm font-medium">
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Hamburguesa móvil */}
+              <button
+                className="md:hidden text-gray-900 focus:outline-none"
+                onClick={() => setMobileOpen(v => !v)}
+                aria-label="Abrir menú"
+              >
+                {mobileOpen ? <XIcon /> : <MenuIcon />}
+              </button>
+            </div>
+
+            {/* Menú desplegable móvil */}
+            {mobileOpen && (
+              <div className="md:hidden mx-4 mb-3 rounded-2xl shadow-xl overflow-hidden"
+                style={{ backgroundColor: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)' }}>
+                <ul className="flex flex-col py-2">
+                  {D.nav.map(item => (
+                    <li key={item.label}>
+                      <a href={item.href}
+                        className="block px-6 py-3 text-gray-900 hover:text-gray-600 hover:bg-gray-50 transition-colors text-sm font-medium"
+                        onClick={() => setMobileOpen(false)}>
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </nav>
+        );
+      }
+
+      /* ─────────────────────────── HERO ─────────────────────────── */
+
+      function Hero() {
+        const h = D.hero;
+        return (
+          <section id="inicio" className="relative h-screen overflow-hidden">
+
+            {/* Video de fondo */}
+            <video
+              className="absolute inset-0 w-full h-full object-cover"
+              src={D.video}
+              autoPlay muted loop playsInline
+            />
+
+            {/* Capa de claridad */}
+            <div className="absolute inset-0 video-overlay" />
+
+            {/* Contenido */}
+            <div className="relative h-full flex flex-col">
+              <div className="flex-1 flex items-center justify-center -mt-80">
+                <div className="text-center px-6">
+
+                  <p className="text-sm font-semibold text-gray-600 tracking-widest uppercase mb-4">
+                    {h.label}
+                  </p>
+
+                  <div className="flex flex-col items-center">
+                    <h1 className="text-6xl md:text-7xl lg:text-8xl font-normal text-gray-500 tracking-tighter leading-none">
+                      {h.heading1}
+                    </h1>
+                    <h1 className="text-6xl md:text-7xl lg:text-8xl font-normal tracking-tighter leading-none"
+                      style={{ color: '#202A36', marginTop: '-12px' }}>
+                      {h.heading2}
+                    </h1>
+                  </div>
+
+                  <p className="mt-6 text-lg md:text-xl text-gray-600 mb-6 max-w-2xl mx-auto">
+                    {h.subtitle}
+                  </p>
+
+                  <div className="flex items-center justify-center gap-4 flex-wrap">
+                    <a href={h.cta1.href}
+                      className="px-4 py-2 rounded-full bg-gray-300 text-gray-800 font-medium hover:bg-gray-400 transition-colors text-sm">
+                      {h.cta1.text}
+                    </a>
+                    <DarkButton href={h.cta2.href}>{h.cta2.text}</DarkButton>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ─────────────────────────── HISTORIA ─────────────────────────── */
+
+      function Story() {
+        const s = D.story;
+        return (
+          <section id="historia" className="py-24 bg-white">
+            <div className="max-w-7xl mx-auto px-8">
+              <div className="grid lg:grid-cols-2 gap-20 items-center">
+
+                {/* Texto */}
+                <div>
+                  <Label text={s.label} />
+                  <h2 className="text-4xl md:text-5xl font-normal tracking-tighter mb-8 leading-tight"
+                    style={{ color: '#202A36' }}>
+                    {s.heading}
+                  </h2>
+                  {s.paragraphs.map((p, i) => (
+                    <p key={i} className="text-gray-500 mb-4 leading-relaxed">{p}</p>
+                  ))}
+                  <div className="mt-8">
+                    <DarkButton href={s.cta.href}>{s.cta.text}</DarkButton>
+                  </div>
+                </div>
+
+                {/* Estadísticas */}
+                <div className="flex flex-col gap-10">
+                  {s.stats.map((stat, i) => (
+                    <div key={i} className="pl-8 border-l-2 border-gray-200">
+                      <p className="text-5xl font-bold tracking-tighter" style={{ color: '#202A36' }}>
+                        {stat.value}
+                      </p>
+                      <p className="text-gray-400 mt-1 text-xs font-semibold uppercase tracking-widest">
+                        {stat.label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ─────────────────────────── TARIFAS ─────────────────────────── */
+
+      function Rates() {
+        const r = D.rates;
+        return (
+          <section id="tarifas" className="py-24 bg-gray-50">
+            <div className="max-w-7xl mx-auto px-8">
+
+              {/* Cabecera */}
+              <div className="text-center mb-16">
+                <Label text={r.label} />
+                <h2 className="text-4xl md:text-5xl font-normal tracking-tighter mb-4" style={{ color: '#202A36' }}>
+                  {r.heading}
+                </h2>
+                <p className="text-gray-500 max-w-xl mx-auto">{r.subtitle}</p>
+              </div>
+
+              {/* Tarjetas */}
+              <div className="grid md:grid-cols-3 gap-8 items-center">
+                {r.plans.map((plan, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl p-8 flex flex-col transition-shadow"
+                    style={plan.highlighted
+                      ? { backgroundColor: '#202A36', color: 'white', transform: 'scale(1.03)', boxShadow: '0 20px 60px rgba(32,42,54,0.35)' }
+                      : { backgroundColor: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }
+                    }
+                  >
+                    {/* Nombre */}
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-3"
+                      style={{ color: plan.highlighted ? 'rgba(255,255,255,0.45)' : '#9ca3af' }}>
+                      {plan.name}
+                    </p>
+
+                    {/* Precio */}
+                    <div className="flex items-end gap-1 mb-2">
+                      <span className="text-4xl font-bold tracking-tighter"
+                        style={{ color: plan.highlighted ? 'white' : '#202A36' }}>
+                        {plan.currency}{plan.price}
+                      </span>
+                      <span className="text-sm mb-1"
+                        style={{ color: plan.highlighted ? 'rgba(255,255,255,0.4)' : '#9ca3af' }}>
+                        {plan.unit}
+                      </span>
+                    </div>
+
+                    {/* Descripción */}
+                    <p className="text-sm mb-6"
+                      style={{ color: plan.highlighted ? 'rgba(255,255,255,0.5)' : '#6b7280' }}>
+                      {plan.description}
+                    </p>
+
+                    {/* Features */}
+                    <ul className="flex flex-col gap-3 mb-8 flex-1">
+                      {plan.features.map((f, j) => (
+                        <li key={j} className="flex items-start gap-2">
+                          <CheckIcon light={plan.highlighted} />
+                          <span className="text-sm"
+                            style={{ color: plan.highlighted ? 'rgba(255,255,255,0.7)' : '#6b7280' }}>
+                            {f}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Botón */}
+                    <button
+                      className="w-full py-3 rounded-full font-medium text-sm transition-colors"
+                      style={plan.highlighted
+                        ? { backgroundColor: 'white', color: '#202A36' }
+                        : { border: '1.5px solid #202A36', color: '#202A36', backgroundColor: 'transparent' }
+                      }
+                      onMouseEnter={e => {
+                        if (plan.highlighted) {
+                          e.currentTarget.style.backgroundColor = '#f3f4f6';
+                        } else {
+                          e.currentTarget.style.backgroundColor = '#202A36';
+                          e.currentTarget.style.color = 'white';
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (plan.highlighted) {
+                          e.currentTarget.style.backgroundColor = 'white';
+                        } else {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = '#202A36';
+                        }
+                      }}
+                    >
+                      {plan.cta}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </section>
+        );
+      }
+
+      /* ─────────────────────────── BENEFICIOS ─────────────────────────── */
+
+      function Benefits() {
+        const b = D.benefits;
+        return (
+          <section id="beneficios" className="py-24 bg-white">
+            <div className="max-w-7xl mx-auto px-8">
+
+              <div className="text-center mb-16">
+                <Label text={b.label} />
+                <h2 className="text-4xl md:text-5xl font-normal tracking-tighter" style={{ color: '#202A36' }}>
+                  {b.heading}
+                </h2>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {b.items.map((item, i) => {
+                  const Icon = iconMap[item.icon];
+                  return (
+                    <div key={i} className="p-8 rounded-2xl bg-gray-50 hover:shadow-lg transition-shadow">
+                      <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center mb-5 shadow-sm">
+                        <Icon />
+                      </div>
+                      <h3 className="text-base font-semibold text-gray-900 mb-2">{item.title}</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">{item.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          </section>
+        );
+      }
+
+      /* ─────────────────────────── FAQ ─────────────────────────── */
+
+      function FAQ() {
+        const f = D.faq;
+        const [openIdx, setOpenIdx] = useState(null);
+
+        return (
+          <section id="faq" className="py-24 bg-gray-50">
+            <div className="max-w-3xl mx-auto px-8">
+
+              <div className="text-center mb-16">
+                <Label text={f.label} />
+                <h2 className="text-4xl md:text-5xl font-normal tracking-tighter" style={{ color: '#202A36' }}>
+                  {f.heading}
+                </h2>
+              </div>
+
+              <div className="divide-y divide-gray-200">
+                {f.items.map((item, i) => {
+                  const isOpen = openIdx === i;
+                  return (
+                    <div key={i} className="py-5">
+                      <button
+                        className="w-full flex items-center justify-between text-left gap-4 focus:outline-none"
+                        onClick={() => setOpenIdx(isOpen ? null : i)}
+                        aria-expanded={isOpen}
+                      >
+                        <span className="font-medium text-gray-900 text-sm md:text-base">{item.q}</span>
+                        <span className="text-gray-400">
+                          <ChevronIcon open={isOpen} />
+                        </span>
+                      </button>
+
+                      <div style={{
+                        maxHeight: isOpen ? '400px' : '0',
+                        overflow: 'hidden',
+                        transition: 'max-height 0.35s ease'
+                      }}>
+                        <p className="text-gray-500 text-sm leading-relaxed pt-4">{item.a}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          </section>
+        );
+      }
+
+      /* ─────────────────────────── FOOTER ─────────────────────────── */
+
+      function Footer() {
+        const f = D.footer;
+        return (
+          <footer style={{ backgroundColor: '#202A36' }} className="py-14">
+            <div className="max-w-7xl mx-auto px-8">
+
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div>
+                  <p className="text-2xl font-semibold text-white tracking-tight">{D.brand}</p>
+                  <p className="text-gray-500 text-sm mt-1">{f.tagline}</p>
+                </div>
+                <ul className="flex items-center gap-6 flex-wrap justify-center">
+                  {D.nav.map(item => (
+                    <li key={item.label}>
+                      <a href={item.href}
+                        className="text-gray-500 hover:text-white transition-colors text-sm">
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <hr className="my-8" style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+              <p className="text-center text-gray-600 text-sm">{f.copy}</p>
+
+            </div>
+          </footer>
+        );
+      }
+
+      /* ─────────────────────────── APP ─────────────────────────── */
+
+      function App() {
+        return (
+          <div>
+            <Navbar />
+            <Hero />
+            <Story />
+            <Rates />
+            <Benefits />
+            <FAQ />
+            <Footer />
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+
+    <!-- Canvas para el avión 3D (encima del contenido, no bloquea clics) -->
+    <canvas id="plane-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;"></canvas>
+
+    <script>
+    window.addEventListener('load', function () {
+      if (typeof THREE === 'undefined') return;
+
+      /* ── Renderer ── */
+      var canvas   = document.getElementById('plane-canvas');
+      var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      var scene  = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.z = 7;
+
+      /* ── Luces ── */
+      scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+      var sun = new THREE.DirectionalLight(0xffffff, 1.8);
+      sun.position.set(4, 8, 5);
+      scene.add(sun);
+      var rim = new THREE.DirectionalLight(0x88aaff, 0.4);
+      rim.position.set(-5, -2, 2);
+      scene.add(rim);
+
+      /* ── Grupos ── */
+      var mouseGroup = new THREE.Group(); // sigue al mouse con inercia
+      var bankPivot  = new THREE.Group(); // alabeo según velocidad
+      var floatPivot = new THREE.Group(); // flotación idle
+      scene.add(mouseGroup);
+      mouseGroup.add(bankPivot);
+      bankPivot.add(floatPivot);
+
+      /* ── Construcción del jet ── */
+      var white = new THREE.MeshPhongMaterial({ color: 0xf1f5f9, shininess: 140, specular: 0x334466 });
+      var dark  = new THREE.MeshPhongMaterial({ color: 0x202A36, shininess: 90 });
+      var blue  = new THREE.MeshPhongMaterial({ color: 0x3b5268, shininess: 60 });
+
+      // Fuselaje
+      var fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.06, 1.6, 16), white);
+      fuse.rotation.z = Math.PI / 2;
+      floatPivot.add(fuse);
+
+      // Morro
+      var nose = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.45, 16), white);
+      nose.rotation.z = -Math.PI / 2;
+      nose.position.x = 1.02;
+      floatPivot.add(nose);
+
+      // Ala principal
+      var wing = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.013, 0.44), white);
+      wing.position.set(0.08, -0.02, 0);
+      floatPivot.add(wing);
+
+      // Estabilizador horizontal
+      var hstab = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.01, 0.27), white);
+      hstab.position.set(-0.7, 0.01, 0);
+      floatPivot.add(hstab);
+
+      // Timón vertical
+      var vtail = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.3, 0.18), dark);
+      vtail.position.set(-0.68, 0.14, 0);
+      floatPivot.add(vtail);
+
+      // Motores traseros (x2)
+      [-0.21, 0.21].forEach(function(z) {
+        var engGeo = new THREE.CylinderGeometry(0.048, 0.042, 0.44, 10);
+        engGeo.rotateZ(Math.PI / 2);
+        var eng = new THREE.Mesh(engGeo, dark);
+        eng.position.set(-0.36, 0.13, z);
+        floatPivot.add(eng);
+        var ring = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.009, 8, 16), blue);
+        ring.rotation.y = Math.PI / 2;
+        ring.position.set(-0.14, 0.13, z);
+        floatPivot.add(ring);
+      });
+
+      // Franja de ventanas
+      var wins = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.027, 0.185), blue);
+      wins.position.set(0.22, 0.073, 0);
+      floatPivot.add(wins);
+
+      // Carenado ventral
+      var belly = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.12), dark);
+      belly.position.set(0.15, -0.085, 0);
+      floatPivot.add(belly);
+
+      // Orientación y escala — MÁS PEQUEÑO
+      floatPivot.rotation.y = Math.PI + 0.25;
+      floatPivot.scale.setScalar(0.85);
+
+      /* ── Estado del mouse / touch ── */
+      var targetX = 2.0, targetY = 1.2;
+      var currentX = targetX, currentY = targetY;
+      var velX = 0, velY = 0;
+      var prevTargetX = targetX, prevTargetY = targetY;
+
+      // Dirección actual: -1 = izquierda (por defecto), +1 = derecha
+      var facingDir = -1;
+      // Orientación base según dirección
+      var YAW_LEFT  = Math.PI + 0.25;  // nariz apunta izquierda
+      var YAW_RIGHT = -0.25;           // nariz apunta derecha (mirror)
+      var currentYaw = YAW_LEFT;
+
+      // Punto de partida: esquina superior derecha
+      mouseGroup.position.set(targetX, targetY, 0);
+
+      /* Convierte coordenadas de pantalla → espacio de escena en z=0 */
+      function screenToScene(px, py) {
+        var vFOV = camera.fov * Math.PI / 180;
+        var h    = 2 * Math.tan(vFOV / 2) * camera.position.z;
+        var w    = h * camera.aspect;
+        return {
+          x: (px / window.innerWidth  - 0.5) * w,
+          y: -(py / window.innerHeight - 0.5) * h
+        };
+      }
+
+      /* Mouse */
+      window.addEventListener('mousemove', function(e) {
+        var p = screenToScene(e.clientX, e.clientY);
+        targetX = p.x;
+        targetY = p.y;
+      });
+
+      /* Touch */
+      window.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 0) return;
+        var t = e.touches[0];
+        var p = screenToScene(t.clientX, t.clientY);
+        targetX = p.x;
+        targetY = p.y;
+      }, { passive: true });
+
+      /* ── Flotación idle con GSAP ── */
+      if (typeof gsap !== 'undefined') {
+        gsap.to(floatPivot.position, {
+          y: 0.1, duration: 2.2, ease: 'sine.inOut', repeat: -1, yoyo: true
+        });
+        gsap.to(floatPivot.rotation, {
+          x: 0.05, duration: 3.8, ease: 'sine.inOut', repeat: -1, yoyo: true
+        });
+      }
+
+      /* ── Render loop ── */
+      var LERP = 0.055; // inercia (más bajo = más lag)
+
+      (function animate() {
+        requestAnimationFrame(animate);
+
+        // Interpolar suavemente hacia el mouse
+        currentX += (targetX - currentX) * LERP;
+        currentY += (targetY - currentY) * LERP;
+
+        // Velocidad de desplazamiento
+        velX = targetX - prevTargetX;
+        velY = targetY - prevTargetY;
+        prevTargetX = targetX;
+        prevTargetY = targetY;
+
+        mouseGroup.position.x = currentX;
+        mouseGroup.position.y = currentY;
+
+        // ── Cambio de dirección con umbral (evita parpadeo) ──
+        if (velX > 0.012 && facingDir !== 1) {
+          facingDir = 1;
+          currentYaw = YAW_RIGHT;
+        } else if (velX < -0.012 && facingDir !== -1) {
+          facingDir = -1;
+          currentYaw = YAW_LEFT;
+        }
+        // Interpolar suavemente el yaw para que el giro sea fluido
+        floatPivot.rotation.y += (currentYaw - floatPivot.rotation.y) * 0.07;
+
+        // Alabeo: se inclina según dirección de vuelo
+        // Si va a la derecha el banco se invierte para que tenga sentido visual
+        var targetBank = -velX * 2.5 * facingDir;
+        bankPivot.rotation.z += (targetBank - bankPivot.rotation.z) * 0.08;
+        bankPivot.rotation.z = Math.max(-0.7, Math.min(0.7, bankPivot.rotation.z));
+
+        // Cabeceo: sube/baja morro levemente según vel vertical
+        var targetPitch = velY * 1.5;
+        bankPivot.rotation.x += (targetPitch - bankPivot.rotation.x) * 0.06;
+        bankPivot.rotation.x = Math.max(-0.4, Math.min(0.4, bankPivot.rotation.x));
+
+        renderer.render(scene, camera);
+      })();
+
+      /* ── Resize ── */
+      window.addEventListener('resize', function () {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      });
+    });
+    </script>
+  </body>
+</html>
