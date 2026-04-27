@@ -90,6 +90,72 @@ ul { list-style: none; }
   transition: opacity .4s ease;
 }
 
+/* ── Three.js Canvas — deshabilitado, reemplazado por imagen ── */
+#droneCanvas {
+  display: none;
+}
+
+/* ── Hero: video fondo completo ─────────────────────────── */
+.hero-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Overlay degradado oscuro sobre el video para legibilidad del texto */
+.hero-bg-video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(10,22,30,0.78) 0%, rgba(10,22,30,0.45) 55%, rgba(10,22,30,0.15) 100%),
+    linear-gradient(180deg, rgba(10,22,30,0.3) 0%, transparent 40%, rgba(10,22,30,0.5) 100%);
+  pointer-events: none;
+}
+
+/* Drone 3D — sigue el mouse en desktop, fijo en móvil */
+.drone-fixed-wrap {
+  position: fixed;
+  /* Posición inicial — JS la sobrescribe en desktop */
+  right: clamp(16px, 4vw, 60px);
+  top: 20%;
+  width: clamp(220px, 22vw, 380px);
+  aspect-ratio: 1 / 1;
+  z-index: 50;
+  pointer-events: none;
+  filter: drop-shadow(0 20px 50px rgba(0,0,0,0.35));
+  /* JS usa transform para mover, así que reseteamos right/top via JS */
+  will-change: transform;
+}
+
+.drone-model-viewer {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  --progress-bar-color: transparent;
+  --progress-mask: transparent;
+  pointer-events: none;
+}
+
+.drone-model-viewer::part(default-ar-button)    { display: none; }
+.drone-model-viewer::part(default-progress-bar) { display: none; }
+
+/* Móvil: fijo en esquina superior derecha, pequeño para no interferir */
+@media (max-width: 900px) {
+  .drone-fixed-wrap {
+    right: 8px;
+    top: 68px;
+    width: clamp(80px, 22vw, 120px);
+    opacity: 0.85;
+    /* JS no toca el posicionamiento en móvil */
+  }
+}
+
 /* ── Container ──────────────────────────────────────────── */
 .container {
   max-width: var(--container);
@@ -230,8 +296,9 @@ ul { list-style: none; }
   gap: 10px;
   flex-shrink: 0;
 }
-.logo-mark { width: 38px; height: 38px; }
-.logo-mark.small { width: 30px; height: 30px; }
+.logo-mark { width: 140px; height: 140px; }
+.logo-mark.small { width: 120px; height: 120px; }
+.logo-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .logo-text {
   font-family: 'Playfair Display', serif;
   font-weight: 800;
@@ -260,6 +327,22 @@ ul { list-style: none; }
 .nav-link:hover {
   background: rgba(13,47,63,0.07);
   opacity: 1;
+}
+
+/* ── Navbar sobre hero con video de fondo (texto blanco) ── */
+#navbar.nav--over-hero:not(.scrolled) .nav-link {
+  color: rgba(255,255,255,0.88);
+  opacity: 1;
+}
+#navbar.nav--over-hero:not(.scrolled) .nav-link:hover {
+  background: rgba(255,255,255,0.13);
+  color: #fff;
+}
+#navbar.nav--over-hero:not(.scrolled) .logo-text {
+  color: #fff;
+}
+#navbar.nav--over-hero:not(.scrolled) .hamburger span {
+  background: #fff;
 }
 
 .btn-wa-nav {
@@ -394,6 +477,14 @@ ul { list-style: none; }
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin-bottom: 24px;
+  transition: background .3s, border-color .3s, color .3s;
+}
+
+/* Hero oscuro (cuando hay video de fondo) */
+#hero.hero--dark-bg .hero-badge {
+  background: rgba(201,168,76,0.18);
+  border-color: rgba(201,168,76,0.5);
+  color: #e8c96a;
 }
 
 .hero-title {
@@ -404,6 +495,12 @@ ul { list-style: none; }
   color: var(--c-navy);
   margin-bottom: 22px;
   letter-spacing: -0.02em;
+  transition: color .3s;
+}
+
+#hero.hero--dark-bg .hero-title {
+  color: #fff;
+  text-shadow: 0 2px 28px rgba(0,0,0,0.45);
 }
 
 .highlight {
@@ -419,6 +516,22 @@ ul { list-style: none; }
   line-height: 1.7;
   margin-bottom: 40px;
   max-width: 540px;
+  transition: color .3s;
+}
+
+#hero.hero--dark-bg .hero-sub {
+  color: rgba(255,255,255,0.82);
+}
+
+#hero.hero--dark-bg .btn-secondary {
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.32);
+}
+
+#hero.hero--dark-bg .btn-secondary:hover {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.5);
 }
 
 .hero-btns {
@@ -453,14 +566,7 @@ ul { list-style: none; }
   letter-spacing: 0.02em;
 }
 
-/* Hero visual (desktop: drone floats right side via Three.js) */
-.hero-visual {
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 50%;
-  z-index: 2;
-  pointer-events: none;
-}
+.hero-visual { display: none; } /* hero-visual ya no se usa */
 
 /* Scroll Indicator */
 .scroll-indicator {
@@ -478,6 +584,12 @@ ul { list-style: none; }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--c-navy);
+  transition: color .3s, opacity .3s;
+}
+
+#hero.hero--dark-bg .scroll-indicator {
+  color: rgba(255,255,255,0.85);
+  opacity: 0.75;
 }
 .scroll-dot {
   width: 6px;
@@ -536,7 +648,7 @@ section {
 
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%,340px),1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
 
@@ -631,7 +743,7 @@ section {
 
 .why-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%,260px),1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -671,6 +783,101 @@ section {
   color: var(--c-muted);
   font-size: 0.875rem;
   line-height: 1.65;
+}
+
+/* ══════════════════════════════════════════════════════════
+   MISSION & VISION
+   ══════════════════════════════════════════════════════ */
+#mision-vision {
+  background: linear-gradient(150deg, var(--c-navy) 0%, #0b2535 50%, #192e18 100%);
+  overflow: hidden;
+}
+#mision-vision::before {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.18) 0%, transparent 65%);
+  top: -20%; right: -8%;
+  filter: blur(70px);
+  pointer-events: none;
+}
+#mision-vision .section-label { color: rgba(201,168,76,0.9); }
+#mision-vision .section-header h2 { color: #fff; }
+#mision-vision .section-header p   { color: rgba(255,255,255,0.58); }
+
+.mv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.mv-card {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1.5px solid rgba(255,255,255,0.11);
+  border-radius: var(--r-lg);
+  padding: 44px 36px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform .4s var(--ease-spring), box-shadow .4s var(--ease-out), border-color .3s ease;
+}
+.mv-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 55%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--c-gold), transparent);
+}
+.mv-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 32px 64px rgba(0,0,0,0.35);
+  border-color: rgba(201,168,76,0.28);
+}
+
+.mv-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(201,168,76,0.12);
+  border: 1.5px solid rgba(201,168,76,0.25);
+  margin: 0 auto 22px;
+  transition: transform .35s var(--ease-spring), background .3s;
+}
+.mv-icon .card-icon-svg {
+  width: 30px;
+  height: 30px;
+  stroke: var(--c-gold);
+}
+.mv-card:hover .mv-icon {
+  transform: scale(1.14) rotate(-8deg);
+  background: rgba(201,168,76,0.2);
+}
+
+.mv-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 18px;
+  letter-spacing: -0.01em;
+}
+
+.mv-text {
+  color: rgba(255,255,255,0.7);
+  font-size: 1rem;
+  line-height: 1.8;
+  font-style: italic;
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1047,9 +1254,10 @@ footer {
   .nav-links, .btn-wa-nav { display: none; }
   .hamburger { display: flex; }
   .hero-content { max-width: 100%; margin: 0; }
-  .hero-visual { display: none; }
+  .drone-fixed-wrap { /* visible en móvil — posición y tamaño definidos arriba */ }
   .services-grid { grid-template-columns: 1fr; }
   .why-grid { grid-template-columns: repeat(2, 1fr); }
+  .mv-grid { grid-template-columns: 1fr; max-width: 520px; }
   .contact-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .btn-submit-form { width: 100%; justify-content: center; }

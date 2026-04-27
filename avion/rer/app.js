@@ -25,6 +25,10 @@ const ICONS = {
   rocket: `<svg class="card-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>`,
   database: `<svg class="card-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
   lightning: `<svg class="card-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+  building: `<svg class="card-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2" width="18" height="20" rx="1"/><path d="M9 22V12h6v10"/><rect x="7" y="6" width="3" height="3"/><rect x="14" y="6" width="3" height="3"/><rect x="7" y="13" width="3" height="3"/><rect x="14" y="13" width="3" height="3"/></svg>`,
+  sun: `<svg class="card-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+  target: `<svg class="card-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+  eye: `<svg class="card-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
   phone: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 .95h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.09a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>`,
   mail: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
   pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
@@ -64,16 +68,6 @@ function populateContent() {
   const btnS = $('#hero-btn-secondary');
   if (btnS) btnS.textContent = d.hero.botonSecundario;
 
-  // Stats
-  const statsEl = $('#heroStats');
-  if (statsEl) {
-    statsEl.innerHTML = d.estadisticas.map(s => `
-      <div class="stat-item">
-        <span class="stat-value counter" data-target="${s.valor}">${s.valor}</span>
-        <span class="stat-label">${s.etiqueta}</span>
-      </div>`).join('');
-  }
-
   // --- Services ---
   const grid = $('#servicesGrid');
   if (grid) {
@@ -96,6 +90,18 @@ function populateContent() {
         <div class="why-icon">${ICONS[w.icono] || ''}</div>
         <h3 class="why-title">${w.titulo}</h3>
         <p class="why-desc">${w.descripcion}</p>
+      </article>`).join('');
+  }
+
+  // --- Mission & Vision ---
+  const mvGrid = $('#mvGrid');
+  if (mvGrid) {
+    const mv = d.misionVision;
+    mvGrid.innerHTML = [mv.mision, mv.vision].map((item, i) => `
+      <article class="mv-card reveal-up" style="transition-delay:${i * 0.15}s">
+        <div class="mv-icon">${ICONS[item.icono] || ''}</div>
+        <h3 class="mv-title">${item.titulo}</h3>
+        <p class="mv-text">&ldquo;${item.texto}&rdquo;</p>
       </article>`).join('');
   }
 
@@ -160,6 +166,16 @@ function initNav() {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+
+  // Navbar blanco cuando se está sobre el hero con video de fondo
+  const heroSection = $('#hero');
+  if (heroSection) {
+    const heroNavObs = new IntersectionObserver(([entry]) => {
+      const hasVideo = heroSection.classList.contains('hero--dark-bg');
+      nav.classList.toggle('nav--over-hero', entry.isIntersecting && hasVideo);
+    }, { threshold: 0.15 });
+    heroNavObs.observe(heroSection);
+  }
 
   // Hamburger
   if (ham && menu) {
@@ -245,7 +261,7 @@ function initScrollReveal() {
 
   // Re-observe after dynamic content is rendered
   const reObserve = () => {
-    $$('.service-card, .why-card, .faq-item').forEach(el => io.observe(el));
+    $$('.service-card, .why-card, .faq-item, .mv-card').forEach(el => io.observe(el));
   };
   setTimeout(reObserve, 100);
 
@@ -769,6 +785,168 @@ function initContactForm() {
 }
 
 /* ============================================================
+   14. HERO THEME — detecta video de fondo y ajusta texto
+   ============================================================ */
+function initHeroTheme() {
+  const hero  = $('#hero');
+  const video = hero ? hero.querySelector('.hero-bg-video') : null;
+  if (!hero || !video) return;
+
+  const activate = () => hero.classList.add('hero--dark-bg');
+  const deactivate = () => hero.classList.remove('hero--dark-bg');
+
+  // Si el src ya está definido en el HTML, activamos de inmediato
+  const source = video.querySelector('source');
+  if (source && source.src) activate();
+
+  // Confirmamos cuando el video carga datos reales
+  video.addEventListener('loadeddata', activate, { once: true });
+  // Si falla (ej: archivo no existe) revertimos
+  video.addEventListener('error', deactivate, { once: true });
+}
+
+/* ============================================================
+   15. DRONE MODEL-VIEWER — mouse tracking en desktop + hélices
+   ============================================================ */
+function initDroneModelViewer() {
+  const viewer = document.getElementById('droneModel');
+  const wrap   = document.getElementById('heroDroneFloat');
+  if (!viewer || !wrap) return;
+
+  // Asignar el modelo desde data.js (cambia GSE.drone3DModel para cambiar el archivo)
+  if (typeof GSE !== 'undefined' && GSE.drone3DModel) {
+    viewer.setAttribute('src', GSE.drone3DModel);
+  }
+
+  // Hélices: activar animaciones cuando cargue el modelo
+  const startAnims = () => {
+    const anims = viewer.availableAnimations;
+    if (anims && anims.length > 0) {
+      const propAnim = anims.find(a => /prop|rotor|spin|helix/i.test(a)) || anims[0];
+      viewer.animationName = propAnim;
+      viewer.play({ repetitions: Infinity });
+    }
+  };
+  if (viewer.loaded) startAnims();
+  else viewer.addEventListener('load', startAnims, { once: true });
+
+  const isMobile = window.matchMedia('(hover:none) and (pointer:coarse)').matches;
+  if (isMobile) {
+    // Móvil: esquina fija, solo rotación 360° continua
+    initDroneFixedSpin(viewer, wrap);
+    return;
+  }
+
+  const followMouse = typeof GSE !== 'undefined' ? GSE.droneFollowsMouse !== false : true;
+  if (followMouse) {
+    initDroneMouseTrack(viewer, wrap);
+  } else {
+    initDroneFixedSpin(viewer, wrap);
+  }
+}
+
+function initDroneMouseTrack(viewer, wrap) {
+  const W = wrap.offsetWidth  || 300;
+  const H = wrap.offsetHeight || 300;
+
+  // Posición inicial: derecha-centro de la pantalla
+  let tX = window.innerWidth  * 0.72;
+  let tY = window.innerHeight * 0.30;
+  let cX = tX, cY = tY;
+
+  // Ángulos de cámara
+  let tTheta = 0, tPhi = 75;
+  let cTheta = 0, cPhi = 75;
+
+  // Giro 360° continuo — acumulador que nunca para
+  let autoSpin   = 0;    // ángulo acumulado (crece sin límite)
+  let mouseOffsetTheta = 0, targetMouseOffset = 0;
+  let idlePhi = 75;
+  let mouseActive = false;
+  let mouseIdleTimer = null;
+  let lastFrame = performance.now();
+
+  window.addEventListener('mousemove', e => {
+    mouseActive = true;
+    clearTimeout(mouseIdleTimer);
+    mouseIdleTimer = setTimeout(() => { mouseActive = false; }, 2000);
+
+    tX = e.clientX - W * 0.08;
+    tY = e.clientY - H * 1.05;
+
+    const nx =  (e.clientX / window.innerWidth  - 0.5) * 2;
+    const ny = -(e.clientY / window.innerHeight - 0.5) * 2;
+    // Offset del mouse encima del giro base (±180° extra)
+    targetMouseOffset = nx * 180;
+    tPhi = 75 - ny * 55;  // ±55° vertical
+  }, { passive: true });
+
+  document.addEventListener('mouseleave', () => {
+    mouseActive = false;
+    tX = window.innerWidth  * 0.80;
+    tY = window.innerHeight * 0.30;
+    targetMouseOffset = 0;
+    tPhi = 75;
+  });
+
+  wrap.style.right     = 'auto';
+  wrap.style.top       = 'auto';
+  wrap.style.transform = 'none';
+
+  (function animDrone() {
+    requestAnimationFrame(animDrone);
+    const now  = performance.now();
+    const dt   = Math.min((now - lastFrame) / 1000, 0.05); // segundos, máx 50ms
+    lastFrame  = now;
+    const t    = now / 1000;
+
+    // Giro base continuo: 40°/s = vuelta completa en 9 s
+    autoSpin += dt * 40;
+
+    // Suavizar el offset del mouse
+    mouseOffsetTheta = lerp(mouseOffsetTheta, mouseActive ? targetMouseOffset : 0, 0.06);
+
+    // Phi: oscila ±12° sobre la posición del mouse para dar sensación de vuelo
+    const targetPhi = (mouseActive ? tPhi : 75) + Math.sin(t * 0.9) * 12;
+
+    cX = lerp(cX, tX, 0.08);
+    cY = lerp(cY, tY, 0.08);
+    cPhi = lerp(cPhi, targetPhi, 0.05);
+
+    const finalTheta = autoSpin + mouseOffsetTheta;
+
+    wrap.style.left = `${cX}px`;
+    wrap.style.top  = `${cY}px`;
+    viewer.cameraOrbit = `${finalTheta.toFixed(2)}deg ${cPhi.toFixed(2)}deg 105%`;
+  })();
+}
+
+// Modo fijo: esquina superior derecha, rota 360°, sigue el scroll
+function initDroneFixedSpin(viewer, wrap) {
+  let autoSpin = 0;
+  let lastFrame = performance.now();
+
+  // Desactivar posicionamiento JS — dejar que CSS (fixed top-right) lo posicione
+  wrap.style.left      = 'auto';
+  wrap.style.top       = 'auto';
+  wrap.style.right     = 'clamp(16px, 4vw, 60px)';
+  wrap.style.top       = '20%';
+
+  (function animFixed() {
+    requestAnimationFrame(animFixed);
+    const now = performance.now();
+    const dt  = Math.min((now - lastFrame) / 1000, 0.05);
+    lastFrame = now;
+    const t   = now / 1000;
+
+    autoSpin += dt * 40; // 40°/s = vuelta completa cada ~9 s
+    const phi = 75 + Math.sin(t * 0.7) * 15; // flotación vertical ±15°
+
+    viewer.cameraOrbit = `${autoSpin.toFixed(2)}deg ${phi.toFixed(2)}deg 105%`;
+  })();
+}
+
+/* ============================================================
    INIT — DOMContentLoaded
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -783,9 +961,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Scroll reveal
   initScrollReveal();
-
-  // 5. Counter animations
-  initCounters();
 
   // 6. Parallax background
   initParallax();
@@ -805,6 +980,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 11. Contact form (Netlify AJAX)
   initContactForm();
 
-  // 12. 3D Drone (last — heavy)
-  initDrone();
+  // 12. Drone 3D — model-viewer con mouse tracking y hélices
+  initDroneModelViewer();
+
+  // 13. Hero theme — texto claro si hay video de fondo
+  initHeroTheme();
 });
